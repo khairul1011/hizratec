@@ -19,6 +19,9 @@ import addpembelian from "views/admin/addpembelian";
 import addpenjualan from "views/admin/addpenjualan";
 import addbarang from "views/admin/addbarang";
 import PrintJual from "views/admin/PrintJual";
+import LaporanHari from "views/admin/laporanhari";
+import LaporanBulan from "views/admin/LaporanBulan";
+import Pembelian from "views/admin/Pembelian";
 
 export default function Admin() {
   return (
@@ -34,11 +37,13 @@ export default function Admin() {
             <Route path="/admin/produk" exact component={addbarang} />
             <Route path="/admin/user" exact component={adduser} />
             <Route path="/admin/pelanggan" exact component={addpelanggan} />
-            <Route path="/admin/pembelian" exact component={addpembelian} />
+            <Route path="/admin/pembelian" exact component={Pembelian} />
             <Route path="/admin/penjualan" exact component={Settings} />
             <Route path="/admin/penjualan/print-faktur" exact component={PrintJual} />
             <Route path="/admin/settings" exact component={Settings} />
             <Route path="/admin/tables" exact component={Tables} />
+            <Route path="/admin/laporanharian" exact component={LaporanHari} />
+            <Route path="/admin/laporanbulanan" exact component={LaporanBulan} />
             <Redirect from="/admin" to="/admin/dashboard" />
           </Switch>
           <FooterAdmin />

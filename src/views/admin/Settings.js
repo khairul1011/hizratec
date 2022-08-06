@@ -47,6 +47,7 @@ export default function Settings() {
   const [total, setTotal] = React.useState('')
   const [jumlah, setJumlah] = React.useState('')
   const [pelanggan, setPelanggan] = React.useState([]);
+  const [s_faktur, setS_Faktur] = React.useState('Pilih Faktur');
   const [s_Pelanggan, setS_Pelanggan] = React.useState('Pilih Pelanggan');
   const [tlp, setTlp] = React.useState('');
 
@@ -685,6 +686,44 @@ export default function Settings() {
 
 
                     </div>
+                    <div className="relative inline-flex align-middle w-full">
+                            <button
+                              className="text-black font-bold text-xs px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 bg-gray-800 active:bg-gray-900 ease-linear transition-all duration-150"
+                              type="button"
+                              ref={btnDropdownRef}
+                              onClick={() => {
+                                dropdownPopoverShow
+                                  ? closeDropdownPopover()
+                                  : openDropdownPopover();
+                              }}
+                            >
+                              {s_faktur}
+                            </button>
+                            <div
+                              ref={popoverDropdownRef}
+                              className={
+                                (dropdownPopoverShow ? "block " : "hidden ") +
+                                "bg-white text-base z-50 float-left py-2 list-none text-left rounded shadow-lg mt-1 min-w-48"
+                              }
+                            >
+                              <a
+
+                                className="text-sm py-2 px-4 font-normal block w-full whitespace-no-wrap bg-transparent text-gray-800"
+                                onClick={() => setS_Faktur('No Faktur')}
+                              >
+                                No Faktur
+                              </a>
+                              {pelanggan?.map((item, i) => (
+                                <a
+                                  key={i}
+                                  className="text-sm cursor-pointer py-2 px-4 font-normal block w-full whitespace-no-wrap bg-transparent text-gray-800"
+                                  onClick={() => Pelanggan(item)}
+                                >
+                                  {item.nama}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
                     {/* <button onClick={() => history.push('/admin/penjualan/print-faktur')}
                       className="bg-lightBlue-500 text-white active:bg-lightBlue-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150"
                       type="button"
