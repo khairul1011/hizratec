@@ -1,14 +1,23 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import axios from 'axios'
 import { useDispatch, useSelector } from 'react-redux'
 // components
+
+import { useReactToPrint } from 'react-to-print';
 
 import CardSettings from "components/Cards/CardSettings.js";
 import CardProfile from "components/Cards/CardProfile.js";
 import PaginationComponent from "components/Pagination";
 import moment from "moment";
+import 'moment/locale/id';
+import { useHistory } from "react-router";
+
+import { createPopper } from '@popperjs/core';
+import Api from "api/Api";
+
 
 export default function Settings() {
+  const history = useHistory();
   const cartitem = useSelector(state => state.cartReducer);
   const user = useSelector(state => state.userReducer.user);
   const ccc = useSelector(state => state.cartSimpan);
@@ -38,11 +47,40 @@ export default function Settings() {
   const [total, setTotal] = React.useState('')
   const [jumlah, setJumlah] = React.useState('')
   const [pelanggan, setPelanggan] = React.useState([]);
-  const [s_Pelanggan, setS_Pelanggan] = React.useState('');
+  const [s_Pelanggan, setS_Pelanggan] = React.useState('Pilih Pelanggan');
+  const [tlp, setTlp] = React.useState('');
 
   const [nofak, setNofak] = useState([])
 
+  const componentRef = useRef();
+
+  const handlePrint = useReactToPrint({
+    content: () => componentRef.current,
+  });
+
+  // dropdown props
+  const [dropdownPopoverShow, setDropdownPopoverShow] = React.useState(false);
+  const btnDropdownRef = React.createRef();
+  const popoverDropdownRef = React.createRef();
+  const openDropdownPopover = () => {
+    createPopper(btnDropdownRef.current, popoverDropdownRef.current, {
+      placement: "bottom-start"
+    });
+    setDropdownPopoverShow(true);
+  };
+  const closeDropdownPopover = () => {
+    setDropdownPopoverShow(false);
+  };
+
   console.log(cartitem)
+
+  const Pelanggan = (e) => {
+    closeDropdownPopover()
+    setKode_pelanggan(e.kode_pelanggan)
+    setS_Pelanggan(e.nama)
+    setTlp(e.telp)
+    console.log(e)
+  }
 
   React.useEffect(() => {
     getDataBarang()
@@ -53,7 +91,7 @@ export default function Settings() {
   const getNofak = () => {
     const options = {
       method: 'GET',
-      url: 'https://afgan.hizraniaga.com/m_api.php',
+      url: Api.url,
       params: { a: 'getFaktur' }
     };
 
@@ -66,7 +104,7 @@ export default function Settings() {
   }
 
   const getpelanggan = () => {
-    const options = { method: 'GET', url: 'https://afgan.hizraniaga.com/m_api.php', params: { a: 'pelanggan' } };
+    const options = { method: 'GET', url: Api.url, params: { a: 'pelanggan' } };
 
     axios.request(options).then(function (response) {
       console.log(response.data);
@@ -90,8 +128,8 @@ export default function Settings() {
     setTotal(totals);
     setJumlah(banyak)
     const diskon = parseInt(totals) * (10 / 100);
-
-    console.log(diskon + parseInt(totals));
+    const pajak = diskon + parseInt(totals);
+    console.log(pajak);
 
     // dispatch({
     //     type: "TOTAL",
@@ -101,7 +139,7 @@ export default function Settings() {
 
 
   const getDataBarang = () => {
-    const options = { method: 'GET', url: 'https://afgan.hizraniaga.com/m_api.php', params: { a: 'barang' } };
+    const options = { method: 'GET', url: Api.url, params: { a: 'barang' } };
 
     axios.request(options).then(function (response) {
       console.log(response.data);
@@ -238,10 +276,47 @@ export default function Settings() {
     console.log('cart +', item);
   }
 
+  const renderFaktur = () => {
+    let items = [];
+    cartitem.map((item, i) => {
+      const newTotal = item.quantity * item.harga;
+      items.push(
+
+
+        <tr key={i}>
+          <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left flex items-center">
+
+            <span
+              className={
+                "ml-3 font-bold " +
+                +"light"
+              }
+            >
+              {item.nama_barang}
+            </span>
+          </th>
+          <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+            {item.quantity}
+          </td>
+          <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+            {currencyFormat(item.harga)}
+          </td>
+          <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+            {currencyFormat(newTotal)}
+          </td>
+
+
+        </tr>
+      );
+    });
+
+    return items;
+  }
+
   const renderItem = () => {
     let items = [];
     cartitem.map((item, i) => {
-      // const newTotal = item.quantity * item.harga;
+      const newTotal = item.quantity * item.harga;
       items.push(
         <ul key={i} className="md:flex-col md:min-w-full flex flex-col list-none" onClick={() => setfirst(item.kode_barang)} >
           {/* <button onClick={() => console.log(items)} className="bg-lightBlue-500 text-white active:bg-lightBlue-600 font-bold uppercase text-sm px-6 py-3 rounded-full shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150" type="button">
@@ -386,6 +461,8 @@ export default function Settings() {
     return items;
   }
 
+
+
   const tambahKeranjang = (item) => {
 
     // setQty(item.quantity)
@@ -438,8 +515,9 @@ export default function Settings() {
 
     var res = y.substring(8)
     const nofakTur = `NF${moment().format('YYMMDD')}${parseInt(res) + 1}`;
-    console.log(y);
+    console.log('y', y);
     console.log(nofakTur);
+    setNo_faktur(nofakTur)
     // const rand = (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
     // const filename = `Nofaktur${rand}`;
     let diBayar = [];
@@ -471,7 +549,7 @@ export default function Settings() {
 
     let config = {
       method: 'post',
-      url: 'https://afgan.hizraniaga.com/m_api.php?a=addtransaksi',
+      url: Api.url + 'a=addtransaksi',
       headers: {
         'Content-Type': 'application/json'
       },
@@ -498,8 +576,11 @@ export default function Settings() {
     axios(config)
       .then((response) => {
         console.log(JSON.stringify(response));
+        // handlePrint()
+        // setNo_faktur('')
+        // getNofak()
         if (response.data.Pesan === 'Berhasil') {
-
+          handlePrint()
           // getDatatransaksi()
           setNo_faktur('')
           setKode_pelanggan('')
@@ -510,33 +591,86 @@ export default function Settings() {
           setAdmin('')
           setTotal('')
           setJumlah('')
+          getNofak()
+          dispatch({ type: "REMOVE_ALL" })
+
         }
 
       })
       .catch((error) => {
         console.log(error);
       });
-    dispatch({ type: "REMOVE_ALL" })
+
   }
 
   function currencyFormat(num) {
     return 'Rp ' + parseFloat(num).toFixed().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
   }
 
+  function pembilang(nilai) {
+    nilai = Math.abs(nilai);
+    var simpanNilaiBagi = 0;
+    var huruf = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+    var temp = "";
+
+    if (nilai < 12) {
+      temp = " " + huruf[nilai];
+    }
+    else if (nilai < 20) {
+      temp = pembilang(nilai - 10) + " Belas";
+    }
+    else if (nilai < 100) {
+      simpanNilaiBagi = Math.floor(nilai / 10);
+      temp = pembilang(simpanNilaiBagi) + " Puluh" + pembilang(nilai % 10);
+    }
+    else if (nilai < 200) {
+      temp = " Seratus" + pembilang(nilai - 100);
+    }
+    else if (nilai < 1000) {
+      simpanNilaiBagi = Math.floor(nilai / 100);
+      temp = pembilang(simpanNilaiBagi) + " Ratus" + pembilang(nilai % 100);
+    }
+    else if (nilai < 2000) {
+      temp = " Seribu" + pembilang(nilai - 1000);
+    }
+    else if (nilai < 1000000) {
+      simpanNilaiBagi = Math.floor(nilai / 1000);
+      temp = pembilang(simpanNilaiBagi) + " Ribu" + pembilang(nilai % 1000);
+    }
+    else if (nilai < 1000000000) {
+      simpanNilaiBagi = Math.floor(nilai / 1000000);
+      temp = pembilang(simpanNilaiBagi) + " Juta" + pembilang(nilai % 1000000);
+    }
+    else if (nilai < 1000000000000) {
+      simpanNilaiBagi = Math.floor(nilai / 1000000000);
+      temp = pembilang(simpanNilaiBagi) + " Miliar" + pembilang(nilai % 1000000000);
+    }
+    else if (nilai < 1000000000000000) {
+      simpanNilaiBagi = Math.floor(nilai / 1000000000000);
+      temp = pembilang(nilai / 1000000000000) + " Triliun" + pembilang(nilai % 1000000000000);
+    }
+
+    return temp;
+  }
+
+
+
+
   return (
     <>
-
-
-
       <div className="flex flex-wrap">
         <div className="w-full lg:w-8/12 px-4">
 
           <section className="relative py-16 bg-blueGray-200">
             <div className="container mx-auto px-4">
+
+
+
               <div className="flex flex-wrap justify-left text-center mb-24">
+
                 <div className="w-full lg:w-6/12 px-4">
-                  <form className="md:flex hidden  flex-row flex-wrap items-center lg:ml-auto mr-3">
-                    <div className="relative flex  flex-wrap items-stretch">
+                  <div className="text-center flex justify-between">
+                    <div className="text-center flex justify-between  flex-wrap items-stretch">
                       <span className="z-10 h-full leading-snug font-normal absolute text-center text-blueGray-300 absolute bg-transparent rounded text-base items-center justify-center w-8 pl-3 py-3">
                         <i className="fas fa-search"></i>
                       </span>
@@ -548,15 +682,19 @@ export default function Settings() {
                         placeholder="Search here..."
                         className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 relative bg-white bg-white rounded text-sm shadow outline-none focus:outline-none focus:ring w-full pl-10"
                       />
+
+
                     </div>
-                    {/* <h2 className="text-4xl font-semibold">Here are our heroes</h2>
-                  <p className="text-lg leading-relaxed m-4 text-blueGray-500">
-                    According to the National Oceanic and Atmospheric
-                    Administration, Ted, Scambos, NSIDClead scentist, puts the
+                    {/* <button onClick={() => history.push('/admin/penjualan/print-faktur')}
+                      className="bg-lightBlue-500 text-white active:bg-lightBlue-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150"
+                      type="button"
+                    >
+                      Print
+                    </button> */}
+                  </div>
+                  <form className="md:flex hidden  flex-row flex-wrap items-center lg:ml-auto mr-3">
 
-                    potentially record maximum.
 
-                  </p> */}
                   </form>
                 </div>
               </div>
@@ -649,6 +787,7 @@ export default function Settings() {
                               No Faktur
                             </label>
                             <input
+                              disabled={true}
                               value={no_faktur}
                               onChange={(e) => { setNo_faktur(e.target.value); }}
                               type="text"
@@ -674,7 +813,55 @@ export default function Settings() {
                             />
                           </div>
                         </div>
+
                         <div className="w-full lg:w-6/12 px-4">
+                          <label
+                            className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                            htmlFor="grid-password"
+                          >
+                            Pelanggan
+                          </label>
+                          <div className="relative inline-flex align-middle w-full">
+                            <button
+                              className="text-black font-bold text-xs px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 bg-gray-800 active:bg-gray-900 ease-linear transition-all duration-150"
+                              type="button"
+                              ref={btnDropdownRef}
+                              onClick={() => {
+                                dropdownPopoverShow
+                                  ? closeDropdownPopover()
+                                  : openDropdownPopover();
+                              }}
+                            >
+                              {s_Pelanggan}
+                            </button>
+                            <div
+                              ref={popoverDropdownRef}
+                              className={
+                                (dropdownPopoverShow ? "block " : "hidden ") +
+                                "bg-white text-base z-50 float-left py-2 list-none text-left rounded shadow-lg mt-1 min-w-48"
+                              }
+                            >
+                              <a
+
+                                className="text-sm py-2 px-4 font-normal block w-full whitespace-no-wrap bg-transparent text-gray-800"
+                                onClick={() => setS_Pelanggan('Pilih Pelanggan')}
+                              >
+                                Pilih Pelanggan
+                              </a>
+                              {pelanggan?.map((item, i) => (
+                                <a
+                                  key={i}
+                                  className="text-sm cursor-pointer py-2 px-4 font-normal block w-full whitespace-no-wrap bg-transparent text-gray-800"
+                                  onClick={() => Pelanggan(item)}
+                                >
+                                  {item.nama}
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+
+                        </div>
+                        {/* <div className="w-full lg:w-6/12 px-4">
                           <div className="relative w-full mb-3">
                             <label
                               className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
@@ -693,7 +880,7 @@ export default function Settings() {
 
                             </select>
                           </div>
-                        </div>
+                        </div> */}
                         <div className="w-full lg:w-6/12 px-4">
                           <div className="relative w-full mb-3">
                             <label
@@ -799,13 +986,413 @@ export default function Settings() {
                           >
                             Simpan
                           </button>
-
+                          {/* <button onClick={() => handlePrint()}
+                            className="bg-lightBlue-500 text-white active:bg-lightBlue-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150"
+                            type="button"
+                          >
+                            Simpan
+                          </button> */}
 
                         </div>
                       </div>
 
 
                     </form>
+                    <div ref={componentRef}
+                      className={
+                        "relative  bg-blueGray-100 flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded " +
+                        "light"
+                      }
+                    >
+                      <div className="block w-full  overflow-x-auto">
+                        <div className="rounded-t mt-10   border-blueGray-100 mb-0 px-4 py-3 border-0">
+                          <div className="flex flex-wrap items-center">
+                            <div className="relative w-full px-4 max-w-full flex-grow flex-1">
+                              <h3
+                                className={
+                                  "font-semibold text-lg " +
+                                  "light"
+                                }
+                              >
+                                UD.AFGAN ROOF
+                              </h3>
+                            </div>
+                          </div>
+                        </div>
+                        <table className="items-center w-full  border-collapse">
+                          <thead>
+                            <tr>
+                              <th
+                                className={
+                                  "px-6 align-middle border border-solid py-1 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                  "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                                }
+                              >
+                                Distributor
+                              </th>
+                              <th className={
+                                "px-6 align-middle border border-solid py-1 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                              }></th>
+                              <th
+                                className={
+                                  "px-6 align-middle border border-solid py-1 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                  "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                                }
+                              >Faktur Penjualan</th>
+                              <th className={
+                                "px-6 align-middle border border-solid py-1 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                              }></th>
+                            </tr>
+                            <tr>
+                              <th
+                                className={
+                                  "px-6 align-middle border border-solid text-xs  border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                  "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                                }
+                              >
+                                Alamat : Jl. Harapan Raya Ujung / Jl. Bukit Barisan No.12 A
+                              </th>
+                              <th className={
+                                "px-6 align-middle border border-solid py-1 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                              }></th>
+                              <th
+                                className={
+                                  "px-6 align-middle border border-solid py-1 text-xs border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                  "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                                }
+                              >No : {no_faktur} </th>
+                              <th className={
+                                "px-6 align-middle border border-solid py-1 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                              }></th>
+                            </tr>
+                            <tr>
+                              <th
+                                className={
+                                  "px-6 align-middle border border-solid text-xs border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                  "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                                }
+                              >
+                                Telepon : 0811 7671 709 / 0853 6387 3636
+                              </th>
+                              <th className={
+                                "px-6 align-middle border border-solid py-1 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                              }></th>
+                              <th
+                                className={
+                                  "px-6 align-middle border border-solid py-1 text-xs  border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                  "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                                }
+                              >Tanggal : {moment(tanggal).format('DD MMMM YYYY')}  </th>
+                              <th></th>
+                            </tr>
+                            <tr>
+                              <th></th>
+                              <th className={
+                                "px-6 align-middle border border-solid py-1 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                              }>
+
+                              </th>
+                              <th
+                                className={
+                                  "px-6 align-middle border border-solid py-1 text-xs  border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                  "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                                }
+                              >Pelanggan : {s_Pelanggan}</th>
+                              <th className={
+                                "px-6 align-middle border border-solid py-1 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                              }></th>
+                            </tr>
+                            <tr>
+                              <th className={
+                                "px-6 align-middle border border-solid py-1 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                              }>   </th>
+                              <th></th>
+                              <th
+                                className={
+                                  "px-6 align-middle border border-solid py-1 text-xs  border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                  "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                                }
+                              >Telepon : {tlp} </th>
+                              <th className={
+                                "px-6 align-middle border border-solid py-1 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                              }>  </th>
+                            </tr>
+                            <tr></tr>
+                          </thead>
+                        </table>
+                        {/* Projects table */}
+                        <table className="items-center mt-3 w-full border-collapse">
+                          <thead>
+                            <tr>
+                              <th
+                                className={
+                                  "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                  "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                                }
+                              >
+                                Nama Barang
+                              </th>
+                              <th
+                                className={
+                                  "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                  "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                                }
+                              >
+                                Qty
+                              </th>
+                              <th
+                                className={
+                                  "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                  "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                                }
+                              >
+                                Harga Satuan
+                              </th>
+                              <th
+                                className={
+                                  "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                  "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                                }
+                              >
+                                SubTotal
+                              </th>
+
+
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(renderFaktur())}
+                            {/* end */}
+
+
+                          </tbody>
+                          <tfoot>
+                            <tr>
+                              <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left flex items-center">
+
+                                <span
+                                  className={
+                                    "ml-3 font-bold " +
+                                    +"light"
+                                  }
+                                >
+                                  Grand Total
+                                </span>
+                              </th>
+                              <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+
+                              </td>
+                              <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+
+                              </td>
+                              <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                                {currencyFormat(total)}
+                              </td>
+                            </tr>
+                            <tr>
+                              <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left flex items-center">
+
+                                {/* <span
+                                  className={
+                                    "ml-3 font-bold " +
+                                    +"light"
+                                  }
+                                >
+                                  Grand Total
+                                </span> */}
+                              </th>
+                              <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                                <span
+                                  className={
+                                    "ml-3 font-bold " +
+                                    +"light"
+                                  }
+                                >
+                                  Terbilang :
+                                </span>
+                              </td>
+                              <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                                <span
+                                  className={
+                                    "ml-3 font-bold " +
+                                    +"light"
+                                  }
+                                >
+                                  {pembilang(total)}
+                                </span>
+                              </td>
+                              <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                                {/* {currencyFormat(total)} */}
+                              </td>
+                            </tr>
+
+                          </tfoot>
+                        </table>
+                        {/* footr */}
+                        <table className="items-center w-full mt-16  border-collapse">
+                          <thead>
+                            <tr>
+                              <th
+                                className={
+                                  "px-6 align-middle border border-solid py-1 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                  "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                                }
+                              >
+                                Admin / Marketing
+                              </th>
+                              <th className={
+                                "px-6 align-middle border border-solid py-1 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                              }>Gudang</th>
+                              <th
+                                className={
+                                  "px-6 align-middle border border-solid py-1 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                  "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                                }
+                              >Supir</th>
+                              <th className={
+                                "px-6 align-middle border border-solid py-1 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                              }>Penerima</th>
+                            </tr>
+
+                            <tr><th className={
+                              "px-6 align-middle border border-solid py-1 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                              "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                            }></th></tr>
+                            <tr><th className={
+                              "px-6 align-middle border border-solid py-1 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                              "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                            }></th></tr>
+                            <tr><th className={
+                              "px-6 align-middle border border-solid py-1 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                              "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                            }></th></tr>
+                            <tr><th className={
+                              "px-6 align-middle border border-solid py-1 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                              "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                            }></th></tr>
+                            <tr><th className={
+                              "px-6 align-middle border border-solid mb-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                              "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                            }> </th></tr>
+
+                          </thead>
+                          <tbody>
+
+                          </tbody>
+                          <tfoot>
+                            <tr>
+
+                              <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left flex items-center">
+
+                                <span
+                                  className={
+                                    "ml-3 font-bold " +
+                                    +"light"
+                                  }
+                                >
+
+
+                                  ___________________
+
+
+                                </span>
+                              </th>
+                              <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                                ___________________
+                              </td>
+                              <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                                ___________________
+                              </td>
+                              <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                                ___________________
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+
+                      {/* //pribnt */}
+                      {/* <ComponantPrint ref={componentRef}
+
+                        no="asd"
+                        tanggal={moment().format()}
+                        pelanggan="fulan"
+                        telepon="0809"
+                      /> */}
+                      {/* <button onClick={handlePrint}>print</button> */}
+
+                    </div>
                     {/* </div>
                     </div> */}
                     {/* <div className="w-full lg:w-6/12 xl:w-3/12 px-4">

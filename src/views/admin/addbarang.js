@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import axios from 'axios'
 import PaginationComponent from "components/Pagination";
+import Api from "api/Api";
 // components
 
 export default function Addbarang() {
@@ -30,7 +31,7 @@ export default function Addbarang() {
   }, [])
 
   const getDataBarang = () => {
-    const options = { method: 'GET', url: 'https://afgan.hizraniaga.com/m_api.php', params: { a: 'barang' } };
+    const options = { method: 'GET', url: Api.url, params: { a: 'barang' } };
 
     axios.request(options).then(function (response) {
       console.log(response.data);
