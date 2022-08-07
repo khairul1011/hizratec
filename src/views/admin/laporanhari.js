@@ -1,17 +1,23 @@
 import React, { useEffect, useState, useMemo } from "react";
 import axios from 'axios'
 import PaginationComponent from "components/Pagination";
+import Api from "api/Api";
+import { useDispatch, useSelector } from "react-redux";
+import { useHistory } from "react-router";
+
+import moment from "moment";
 // components
 
 export default function LaporanHari() {
+  const dispatch = useDispatch()
   const [barang, setBarang] = React.useState([]);
-
+  const user = useSelector(state => state.userReducer.user)
   const [totalItems, setTotalItems] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState('');
   const [sorting, setSorting] = useState({ field: "", order: "" });
   const [loading, setLoading] = useState(false);
-
+  const history = useHistory()
   const [pageSize, setPageSize] = useState(10);
   const [tanggal, setTanggal] = React.useState('')
   const [kode_barang, setKode_barang] = React.useState('')
@@ -22,24 +28,70 @@ export default function LaporanHari() {
   const [unit, setUnit] = React.useState('Lembar')
   const [harga, setHarga] = React.useState('')
   const [stok, setStok] = React.useState('')
+  const [laba, setLaba] = useState(0)
 
   const [tukar, setTukar] = useState('simpan')
 
   React.useEffect(() => {
     getDataBarang()
-    // getDataPelanggan()
-    // getDataTransaksi()
+
+
   }, [])
 
+  const getTot = () => {
+    let totals = 0;
+    let banyak = 0;
+    barang.forEach(element => {
+      banyak = banyak + parseInt((element.harga * element.qty) - (element.modal * element.qty));
+    });
+    // getDataPelanggan()
+    // getDataTransaksi()
+    setLaba(banyak)
+    console.log('laba', banyak);
+  }
+
   const getDataBarang = () => {
-    const options = { method: 'GET', url: 'https://afgan.hizraniaga.com/m_api.php', params: { a: 'barang' } };
+    let totals = 0;
+    let banyak = 0;
+    const options = {
+      method: 'GET',
+      url: Api.url,
+      params: { a: 'lap_jual_harian', admin: user[0]?.username, hari: tanggal }
+    };
 
     axios.request(options).then(function (response) {
       console.log(response.data);
       setBarang(response.data.data)
+
+      response.data.data.forEach(element => {
+        banyak = banyak + parseInt((element.harga * element.qty) - (element.modal * element.qty));
+        totals = totals + parseInt(element.total);
+      });
+
+      // getDataPelanggan()
+      // getDataTransaksi()
+      setLaba(banyak)
+      dispatch({
+        type: "LAP_HARI",
+        laphari: response.data.data
+      })
+      dispatch({
+        type: "LABA_HARI",
+        labahari: banyak
+      })
+      dispatch({
+        type: "GRAND_TOTAL",
+        grandtotal: totals
+      })
+      console.log('laba', banyak);
     }).catch(function (error) {
       console.error(error);
     });
+
+  }
+
+  function currencyFormat(num) {
+    return 'Rp ' + parseFloat(num).toFixed().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
   }
 
   // const getDataTransaksi = () => {
@@ -65,10 +117,10 @@ export default function LaporanHari() {
     //   );
     // }
 
-    if (search) {
+    if (tanggal) {
       computedComments = computedComments.filter(
         comment =>
-          comment.kode_barang.toLowerCase().includes(search.toLowerCase())
+          comment.tanggal.toLowerCase().includes(tanggal.toLowerCase())
 
       );
     }
@@ -176,6 +228,14 @@ export default function LaporanHari() {
     setHarga(item.harga)
     setStok(item.stok)
     console.log(item)
+  }
+  const ontanggal = (e) => {
+    setTanggal(e)
+    setCurrentPage(1)
+    dispatch({
+      type: "NAMA_HARI",
+      namaHari: moment(e).format('DD-MM-YYYY')
+    })
   }
 
   return (
@@ -360,15 +420,15 @@ export default function LaporanHari() {
 
             <div className="rounded-t bg-white mb-0 px-6 py-6">
               <div className="flex flex-wrap justify-left text-center ">
-                <h6 className="text-blueGray-700 text-xl font-bold">Laporan Penjualan Harian</h6>
+                <h6 className="text-blueGray-700 text-xl font-bold">Laporan Penjualan Bulanan</h6>
                 <div className="w-full lg:w-6/12 px-4">
-                  <div className="text-center flex justify-between">
+                  <div className="text-center flex justify-around">
                     <div className="w-full lg:w-6/12 px-4">
                       <div className="relative w-full mb-3">
-                        
+
                         <input
                           value={tanggal}
-                          onChange={(e) => { setTanggal(e.target.value); console.log('tgl', tanggal); }}
+                          onChange={(e) => { ontanggal(e.target.value); console.log('tgl', tanggal); }}
                           type="date"
                           className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                           defaultValue=""
@@ -377,23 +437,31 @@ export default function LaporanHari() {
                     </div>
 
                     <div className="w-full lg:w-6/12 px-4">
-            
-                  <button onClick={() => postBarang()}
-                    className="bg-lightBlue-500 text-white active:bg-lightBlue-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150"
-                    type="button"
-                  >
-                    Cetak
-                  </button>
-            
-              </div>
+                      <button onClick={getDataBarang} className="bg-lightBlue-500 text-white active:bg-lightBlue-600 font-bold uppercase text-sm px-6 py-3 rounded-full shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150" type="button">
+                        Cari
+                      </button>
+
+                    </div>
+                    <div className="w-full lg:w-12/12 px-4">
+
+                      <button onClick={() => history.push('/admin/laporanharian/print-hari')}
+                        className="bg-lightBlue-500 text-white active:bg-lightBlue-600 font-bold uppercase text-sm px-6 py-3 rounded-full shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                        type="button"
+                      >
+                        Cetak
+                      </button>
+
+                    </div>
+                    {/* <div className="w-full lg:w-12/12 flex px-4"><div className="relative w-full mb-3">{currencyFormat(laba) }</div></div> */}
 
                   </div>
-                  
+                  <h6 className="text-blueGray-700 text-xl font-bold">Total Laba  : {currencyFormat(laba)}</h6>
                 </div>
               </div>
-              
+
 
             </div>
+
 
 
             <div className="block w-full overflow-x-auto">
@@ -408,11 +476,9 @@ export default function LaporanHari() {
                       Nama Pelanggan
                     </th>
                     <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                      Nama Barang
+                      Status
                     </th>
-                    <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                      Harga
-                    </th>
+
                     <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
                       Qty
                     </th>
@@ -420,36 +486,40 @@ export default function LaporanHari() {
                       Admin
                     </th>
                     <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                      Laba
+                      Tanggal
                     </th>
                     <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                      Jumlah
+                      Total Bayar
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {commentsData?.map((item, i) => (
-                    <tr key={i} onClick={() => onData(item)}>
+                    <tr key={i} >
                       <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left" >
-                        {item.kode_barang}
+                        {item.no_faktur}
                       </th>
                       <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                        {item.nama_barang}
+                        {item.nama}
                       </td>
                       <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                        {item.merek}
-                      </td>
-                      <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                        {/* <i className="fas fa-arrow-up text-emerald-500 mr-4"></i> */}
-                        {item.kategori}
+                        {item.status}
                       </td>
                       <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
                         {/* <i className="fas fa-arrow-up text-emerald-500 mr-4"></i> */}
-                        {item.harga}
+                        {item.jumlah}
                       </td>
                       <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
                         {/* <i className="fas fa-arrow-up text-emerald-500 mr-4"></i> */}
-                        {item.stok}
+                        {item.admin}
+                      </td>
+                      <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                        {/* <i className="fas fa-arrow-up text-emerald-500 mr-4"></i> */}
+                        {moment(item.tanggal).format('DD-MM-YYYY')}
+                      </td>
+                      <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                        {/* <i className="fas fa-arrow-up text-emerald-500 mr-4"></i> */}
+                        {item.total}
                       </td>
                     </tr>
                   ))}

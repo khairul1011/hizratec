@@ -2,14 +2,18 @@ import React, { useEffect, useState, useMemo } from "react";
 import axios from 'axios'
 import { useDispatch, useSelector } from 'react-redux'
 // components
-
+import { useReactToPrint } from 'react-to-print';
 import CardSettings from "components/Cards/CardSettings.js";
 import CardProfile from "components/Cards/CardProfile.js";
 import PaginationComponent from "components/Pagination";
 import moment from "moment";
+import { useHistory } from "react-router";
+
+import { createPopper } from '@popperjs/core';
+import Api from "api/Api";
 
 export default function Pembelian() {
-  const cartitem = useSelector(state => state.cartReducer);
+  const cartitem = useSelector(state => state.cartReducer2);
   const user = useSelector(state => state.userReducer.user);
   const ccc = useSelector(state => state.cartSimpan);
   const [barang, setBarang] = React.useState([]);
@@ -28,38 +32,33 @@ export default function Pembelian() {
 
   const [pageSize, setPageSize] = useState(8);
 
-  const [no_faktur, setNo_faktur] = React.useState('')
-  const [kode_pelanggan, setKode_pelanggan] = React.useState('')
+  const [kode_beli, setKodeBeli] = React.useState('')
   const [tanggal, setTanggal] = React.useState('')
-  const [status, setStatus] = React.useState('Cash')
-  const [lama, setLama] = React.useState('-')
-  const [ongkir, setOngkir] = React.useState(0)
-  const [admin, setAdmin] = React.useState(user[0]?.username)
-  const [total, setTotal] = React.useState('')
   const [jumlah, setJumlah] = React.useState('')
-  const [pelanggan, setPelanggan] = React.useState([]);
-  const [s_Pelanggan, setS_Pelanggan] = React.useState('');
+  const [total, setTotal] = React.useState('')
+  
 
-  const [nofak, setNofak] = useState([])
+
+  const [kode, setK_Beli] = useState([])
 
   console.log(cartitem)
 
   React.useEffect(() => {
     getDataBarang()
-    getpelanggan()
-    getNofak()
+    
+    getK_beli()
   }, [])
 
-  const getNofak = () => {
+  const getK_beli = () => {
     const options = {
       method: 'GET',
-      url: 'https://afgan.hizraniaga.com/m_api.php',
-      params: { a: 'getFaktur' }
+      url: Api.url,
+      params: { a: 'getkodebeli' }
     };
 
     axios.request(options).then(function (response) {
       console.log(response.data.data);
-      setNofak(response.data.data)
+      setK_Beli(response.data.data)
     }).catch(function (error) {
       console.error(error);
     });
@@ -70,7 +69,7 @@ export default function Pembelian() {
 
     axios.request(options).then(function (response) {
       console.log(response.data);
-      setPelanggan(response.data.data)
+
     }).catch(function (error) {
       console.error(error);
     });
@@ -205,7 +204,7 @@ export default function Pembelian() {
       "harga": harga,
     };
     dispatch({
-      type: "ADD_TO_CART",
+      type: "ADD_TO_CART2",
       item: cartItem
     });
 
@@ -227,7 +226,7 @@ export default function Pembelian() {
       "harga": harga,
     };
     dispatch({
-      type: "ADD_TO_CART",
+      type: "ADD_TO_CART2",
       item: cartItem
     });
 
@@ -406,7 +405,7 @@ export default function Pembelian() {
 
     };
     dispatch({
-      type: 'ADD_TO_CART',
+      type: 'ADD_TO_CART2',
       item: cartItem,
     });
     console.log('id', item.kode_barang)
@@ -416,11 +415,11 @@ export default function Pembelian() {
     if (cartitem.length <= 1) {
 
       dispatch({
-        type: "REMOVE_ALL",
+        type: "REMOVE_ALL2",
       })
     } else {
       dispatch({
-        type: 'REMOVE_ITEM',
+        type: 'REMOVE_ITEM2',
         item: item
       });
     }
@@ -428,24 +427,24 @@ export default function Pembelian() {
 
   }
 
-  const postPenjualan = () => {
+  const postPembelian = () => {
     var y = [];
-    nofak.forEach(element => {
-      y = element.no_faktur;
+    kode.forEach(element => {
+      y = element.kode_beli;
     })
     // nofak.pop();
 
 
     var res = y.substring(8)
-    const nofakTur = `NF${moment().format('YYMMDD')}${parseInt(res) + 1}`;
+    const kode_beli = `P${moment().format('YYMMDD')}${parseInt(res) + 1}`;
     console.log(y);
-    console.log(nofakTur);
+    console.log(kode_beli);
     // const rand = (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
     // const filename = `Nofaktur${rand}`;
     let diBayar = [];
     cartitem.forEach(element => {
       diBayar.push({
-        no_faktur: nofakTur,
+        kode_beli: kode_beli,
         kode_barang: element.kode_barang,
         nama_barang: element.nama_barang,
         harga: element.harga,
@@ -457,21 +456,16 @@ export default function Pembelian() {
     console.log(diBayar);
 
     let items = JSON.stringify({
-      "no_faktur": nofakTur,
+      "kode_beli": kode_beli,
       "tanggal": tanggal,
-      "kode_pelanggan": kode_pelanggan,
       "jumlah": jumlah,
-      "status": status,
-      "lama": lama,
-      "ongkir": ongkir,
       "total": total,
-      "admin": admin,
       "data": diBayar
     });
 
     let config = {
       method: 'post',
-      url: 'https://afgan.hizraniaga.com/m_api.php?a=addtransaksi',
+      url: 'https://afgan.hizraniaga.com/m_api.php?a=addpembelian',
       headers: {
         'Content-Type': 'application/json'
       },
@@ -501,22 +495,18 @@ export default function Pembelian() {
         if (response.data.Pesan === 'Berhasil') {
 
           // getDatatransaksi()
-          setNo_faktur('')
-          setKode_pelanggan('')
-          setTanggal('')
-          setStatus('Cash')
-          setLama('-')
-          setOngkir('')
-          setAdmin('')
-          setTotal('')
+          
           setJumlah('')
+          setTanggal('')
+          setTotal('')
+
         }
 
       })
       .catch((error) => {
         console.log(error);
       });
-    dispatch({ type: "REMOVE_ALL" })
+    dispatch({ type: "REMOVE_ALL2" })
   }
 
   function currencyFormat(num) {
@@ -717,7 +707,7 @@ export default function Pembelian() {
                         </div>
                         <div className="w-full lg:w-6/12 px-4">
 
-                          <button onClick={() => postPenjualan()}
+                          <button onClick={() => postPembelian()}
                             className="bg-lightBlue-500 text-white active:bg-lightBlue-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150"
                             type="button"
                           >

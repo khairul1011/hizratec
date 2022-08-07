@@ -1,11 +1,17 @@
 import React, { useEffect, useState, useMemo } from "react";
 import axios from 'axios'
 import PaginationComponent from "components/Pagination";
+import Api from "api/Api";
+import { useDispatch, useSelector } from "react-redux";
+import moment from "moment";
+import { useHistory } from "react-router";
 // components
 
 export default function LaporanBulan() {
+  const dispatch = useDispatch()
+  const history = useHistory()
   const [barang, setBarang] = React.useState([]);
-
+  const user = useSelector(state => state.userReducer.user)
   const [totalItems, setTotalItems] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -13,6 +19,7 @@ export default function LaporanBulan() {
   const [loading, setLoading] = useState(false);
 
   const [pageSize, setPageSize] = useState(10);
+  const [laba, setLaba] = useState(0)
 
   const [kode_barang, setKode_barang] = React.useState('')
   const [nama_barang, setNama_barang] = React.useState('')
@@ -22,43 +29,98 @@ export default function LaporanBulan() {
   const [unit, setUnit] = React.useState('Lembar')
   const [harga, setHarga] = React.useState('')
   const [stok, setStok] = React.useState('')
+  const [bulantanggal, setBulantanggal] = React.useState([])
+  const [bulan, setBulan] = React.useState('')
 
   const [tukar, setTukar] = useState('simpan')
 
   React.useEffect(() => {
-    getDataBarang()
+    // getDataBarang()
+    getBulantanggal()
   }, [])
 
   const getDataBarang = () => {
-    const options = { method: 'GET', url: 'https://afgan.hizraniaga.com/m_api.php', params: { a: 'barang' } };
+    let totals = 0;
+    let banyak = 0;
+    const options = {
+      method: 'GET',
+      url: Api.url,
+      params: { a: 'lap_jual_bulan', admin: user[0]?.username, bln: bulan }
+    };
+
 
     axios.request(options).then(function (response) {
       console.log(response.data);
       setBarang(response.data.data)
+      dispatch({
+        type: "LAP_BULAN",
+        lapbulan: response.data.data
+      })
+      response.data.data.forEach(element => {
+        banyak = banyak + parseInt(element.total);
+      });
+      // getDataPelanggan()
+      // getDataTransaksi()
+      setLaba(banyak)
+      dispatch({
+        type: "GRAND_TOTAL",
+        grandtotal: banyak
+      })
+      console.log('laba', banyak);
+      // console.log('laba', banyak);
     }).catch(function (error) {
       console.error(error);
     });
+  }
+
+  const getBulantanggal = () => {
+    const options = {
+      method: 'GET',
+      url: Api.url,
+      params: { a: 'bulantanggal' }
+    };
+
+    axios.request(options).then(function (response) {
+      console.log(response.data);
+      setBulantanggal(response.data.data)
+    }).catch(function (error) {
+      console.error(error);
+    });
+
+
+  }
+
+  const onBulan = (e) => {
+
+    setBulan(e)
+
+    setCurrentPage(1)
+    dispatch({
+      type: "NAMA_BULAN",
+      namaBulan: e
+    })
+    console.log('commentsData',commentsData)
   }
 
   const commentsData = useMemo(() => {
     // console.log(search)
     let computedComments = barang;
 
-    // if (searchQuery) {
-    //   computedComments = computedComments.filter(
-    //     comment =>
-    //       comment.barang_nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    //       comment.barang_id.toLowerCase().includes(searchQuery.toLowerCase())
-    //   );
-    // }
-
-    if (search) {
+    if (bulan) {
       computedComments = computedComments.filter(
         comment =>
-          comment.kode_barang.toLowerCase().includes(search.toLowerCase())
+          comment.bulan?.toLowerCase().includes(bulan?.toLowerCase())
 
       );
     }
+
+    // if (search) {
+    //   computedComments = computedComments.filter(
+    //     comment =>
+    //       comment.kode_barang.toLowerCase().includes(search.toLowerCase())
+
+    //   );
+    // }
 
     setTotalItems(computedComments.length);
 
@@ -76,84 +138,18 @@ export default function LaporanBulan() {
       (currentPage - 1) * pageSize,
       (currentPage - 1) * pageSize + pageSize
     );
-  }, [barang, currentPage, search, sorting]);
+  }, [barang, currentPage, bulan, sorting]);
 
-  const postBarang = () => {
-    const options = {
-      method: 'POST',
-      url: 'https://afgan.hizraniaga.com/m_api.php/m_api.php',
-      params: { a: 'addproduct' },
-      headers: { 'Content-Type': 'application/json' },
-      data: {
-        kode_barang: kode_barang,
-        nama_barang: nama_barang,
-        jenis: jenis,
-        merek: merek,
-        kategori: kategori,
-        unit: unit,
-        harga: harga,
-        stok: stok
-      }
-    };
 
-    axios.request(options).then(function (response) {
-      console.log(response.data);
-      if (response.data.Pesan === 'Berhasil') {
-        setTukar('simpan')
-        getDataBarang()
-        setKode_barang('')
-        setNama_barang('')
-        setKategori('')
-        setUnit('')
-        setMerek('')
-        setJenis('')
-        setHarga('')
-        setStok('')
-      }
-    }).catch(function (error) {
-      console.error(error);
-    });
-  }
 
-  const editbarang = () => {
-    const options = {
-      method: 'POST',
-      url: 'https://afgan.hizraniaga.com/m_api.php/m_api.php',
-      params: { a: 'editproduct' },
-      headers: { 'Content-Type': 'application/json' },
-      data: {
-        kode_barang: kode_barang,
-        nama_barang: nama_barang,
-        jenis: jenis,
-        merek: merek,
-        kategori: kategori,
-        unit: unit,
-        harga: harga,
-        stok: stok
-      }
-    };
 
-    axios.request(options).then(function (response) {
-      console.log(response.data);
-      if (response.data.Pesan === 'Berhasil') {
-        setTukar('simpan')
-        getDataBarang()
-        setKode_barang('')
-        setNama_barang('')
-        setKategori('')
-        setUnit('')
-        setMerek('')
-        setJenis('')
-        setHarga('')
-        setStok('')
-      }
-    }).catch(function (error) {
-      console.error(error);
-    });
+
+  function currencyFormat(num) {
+    return 'Rp ' + parseFloat(num).toFixed().replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1,');
   }
 
   const onData = (item) => {
-    setTukar('edit')
+    // setTukar('edit')
     setKode_barang(item.kode_barang)
     setNama_barang(item.nama_barang)
     setKategori(item.kategori)
@@ -349,37 +345,44 @@ export default function LaporanBulan() {
               <div className="flex flex-wrap justify-left text-center ">
                 <h6 className="text-blueGray-700 text-xl font-bold">Laporan Penjualan Bulanan</h6>
                 <div className="w-full lg:w-6/12 px-4">
-                  <div className="text-center flex justify-between">
+                  <div className="text-center flex justify-around">
                     <div className="w-full lg:w-6/12 px-4">
                       <div className="relative w-full mb-3">
-                        
+
                         <select
-                          value={unit}
-                          onChange={(e) => { setUnit(e.target.value); console.log(unit) }}
+                          value={bulan}
+                          onChange={(e) => { onBulan(e.target.value); console.log(bulan) }}
                           className="selectpicker2">
-                          <option valeu="Lembar">Lembar</option>
-                          <option valeu="Batang">Batang</option>
-                          <option valeu="M2">M2</option>
-                          <option valeu="Kotak">Kotak</option>
-                          <option valeu="Buah">Buah</option>
-                          <option valeu="Unit">Unit</option>
+
+                          {bulantanggal?.map((item, i) => (
+                            <option key={i} value={item.tanggal}>{item.tanggal}</option>
+                          ))}
+
+
                         </select>
                       </div>
                     </div>
 
                     <div className="w-full lg:w-6/12 px-4">
+                      <button onClick={getDataBarang} className="bg-lightBlue-500 text-white active:bg-lightBlue-600 font-bold uppercase text-sm px-6 py-3 rounded-full shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150" type="button">
+                        Cari
+                      </button>
 
-                      <button onClick={() => postBarang()}
-                        className="bg-lightBlue-500 text-white active:bg-lightBlue-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150"
+                    </div>
+                    <div className="w-full lg:w-12/12 px-4">
+
+                      <button onClick={() => history.push('/admin/laporanbulanan/print-faktur')}
+                        className="bg-lightBlue-500 text-white active:bg-lightBlue-600 font-bold uppercase text-sm px-6 py-3 rounded-full shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
                         type="button"
                       >
                         Cetak
                       </button>
 
                     </div>
+                    {/* <div className="w-full lg:w-12/12 flex px-4"><div className="relative w-full mb-3">{currencyFormat(laba) }</div></div> */}
 
                   </div>
-
+                  <h6 className="text-blueGray-700 text-xl font-bold">Grand TOTAL  : {currencyFormat(laba)}</h6>
                 </div>
               </div>
 
@@ -413,34 +416,36 @@ export default function LaporanBulan() {
                     <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
                       Total Bayar
                     </th>
-                    <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                      Admin
-                    </th>
+
                   </tr>
                 </thead>
                 <tbody>
                   {commentsData?.map((item, i) => (
-                    <tr key={i} onClick={() => onData(item)}>
+                    <tr key={i} onClick={() => onData(item)}  >
                       <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left" >
-                        {item.kode_barang}
+                        {item.no_faktur}
                       </th>
                       <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                        {item.nama_barang}
+                        {item.nama}
                       </td>
                       <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                        {item.merek}
-                      </td>
-                      <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
-                        {/* <i className="fas fa-arrow-up text-emerald-500 mr-4"></i> */}
-                        {item.kategori}
+                        {moment(item.tanggal).format('DD MM YYYY')}
                       </td>
                       <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
                         {/* <i className="fas fa-arrow-up text-emerald-500 mr-4"></i> */}
-                        {item.harga}
+                        {item.jumlah}
                       </td>
                       <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
                         {/* <i className="fas fa-arrow-up text-emerald-500 mr-4"></i> */}
-                        {item.stok}
+                        {item.status}
+                      </td>
+                      <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                        {/* <i className="fas fa-arrow-up text-emerald-500 mr-4"></i> */}
+                        {item.admin}
+                      </td>
+                      <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
+                        {/* <i className="fas fa-arrow-up text-emerald-500 mr-4"></i> */}
+                        {currencyFormat(item.total)}
                       </td>
                     </tr>
                   ))}

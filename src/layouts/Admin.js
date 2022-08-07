@@ -22,6 +22,7 @@ import PrintJual from "views/admin/PrintJual";
 import LaporanHari from "views/admin/laporanhari";
 import LaporanBulan from "views/admin/LaporanBulan";
 import Pembelian from "views/admin/Pembelian";
+import PrintHari from "views/admin/PrintHari";
 
 export default function Admin() {
   return (
@@ -39,7 +40,8 @@ export default function Admin() {
             <Route path="/admin/pelanggan" exact component={addpelanggan} />
             <Route path="/admin/pembelian" exact component={Pembelian} />
             <Route path="/admin/penjualan" exact component={Settings} />
-            <Route path="/admin/penjualan/print-faktur" exact component={PrintJual} />
+            <Route path="/admin/laporanbulanan/print-faktur" exact component={PrintJual} />
+            <Route path="/admin/laporanharian/print-hari" exact component={PrintHari} />
             <Route path="/admin/settings" exact component={Settings} />
             <Route path="/admin/tables" exact component={Tables} />
             <Route path="/admin/laporanharian" exact component={LaporanHari} />

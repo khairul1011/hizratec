@@ -1,11 +1,20 @@
 import React, { useEffect, useState, useMemo } from "react";
 import axios from 'axios'
+import PaginationComponent from "components/Pagination";
 
 
 // components
 
 export default function Addpelanggan() {
   const [pelanggan, setPelanggan] = React.useState([]);
+
+  const [totalItems, setTotalItems] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [sorting, setSorting] = useState({ field: "", order: "" });
+  const [loading, setLoading] = useState(false);
+
+  const [pageSize, setPageSize] = useState(10);
 
   const [kode_pelanggan, setKode_pelanggan] = React.useState('')
   const [nama, setNama] = React.useState('')
@@ -119,6 +128,43 @@ const posteditdata = () => {
     setKode_pos(item.kode_pos)
     console.log(item)
   }
+  const commentsData = useMemo(() => {
+    // console.log(search)
+    let computedComments = pelanggan;
+
+    // if (searchQuery) {
+    //   computedComments = computedComments.filter(
+    //     comment =>
+    //       comment.barang_nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    //       comment.barang_id.toLowerCase().includes(searchQuery.toLowerCase())
+    //   );
+    // }
+
+    if (search) {
+      computedComments = computedComments.filter(
+        comment =>
+          comment.kode_pelanggan.toLowerCase().includes(search.toLowerCase())
+
+      );
+    }
+
+    setTotalItems(computedComments.length);
+
+    //Sorting comments
+    if (sorting.field) {
+      const reversed = sorting.order === "asc" ? 1 : -1;
+      computedComments = computedComments.sort(
+        (a, b) =>
+          reversed * a[sorting.field].localeCompare(b[sorting.field])
+      );
+    }
+
+    //Current Page slice
+    return computedComments.slice(
+      (currentPage - 1) * pageSize,
+      (currentPage - 1) * pageSize + pageSize
+    );
+  }, [pelanggan, currentPage, search, sorting]);
 
   return (
     <>
@@ -313,7 +359,7 @@ const posteditdata = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {pelanggan?.map((item, i) => (
+                  {commentsData?.map((item, i) => (
                     <tr key={i} onClick={() => onData(item)} >
                       <th className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4 text-left">
                         {item.kode_pelanggan}
@@ -339,7 +385,12 @@ const posteditdata = () => {
                 </tbody>
               </table>
             </div>
-
+            <PaginationComponent
+            total={totalItems}
+            itemsPerPage={pageSize}
+            currentPage={currentPage}
+            onPageChange={page => setCurrentPage(page)}
+          />
           </form>
         </div>
       </div>

@@ -32,6 +32,7 @@ const cartReducer = (state = InitialState.addedItems, action) => {
                     action.item
                 ];
             }
+            
         case "REMOVE_ITEM":
             const remaingList = [
                 ...state.filter(i => i.kode_barang !== action.item.kode_barang)

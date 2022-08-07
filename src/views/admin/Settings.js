@@ -14,16 +14,25 @@ import { useHistory } from "react-router";
 
 import { createPopper } from '@popperjs/core';
 import Api from "api/Api";
+import Select from 'react-select';
+import { ReactSearchAutocomplete } from 'react-search-autocomplete'
 
+const options = [
+  { value: 'chocolate', label: 'Chocolate', id: 'a' },
+  { value: 'strawberry', label: 'Strawberry', id: 'b' },
+  { value: 'vanilla', label: 'Vanilla', id: 'c' },
+];
 
 export default function Settings() {
+  const [selectedOption, setSelectedOption] = useState(null);
+  const [selectedOption1, setSelectedOption1] = useState(null);
   const history = useHistory();
   const cartitem = useSelector(state => state.cartReducer);
   const user = useSelector(state => state.userReducer.user);
   const ccc = useSelector(state => state.cartSimpan);
   const [barang, setBarang] = React.useState([]);
   const dispatch = useDispatch();
-
+  const [showModal, setShowModal] = React.useState(false);
   const [totalItems, setTotalItems] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -36,7 +45,7 @@ export default function Settings() {
   const [first, setfirst] = useState('')
 
   const [pageSize, setPageSize] = useState(8);
-
+  const [tukar, setTukar] = useState('simpan')
   const [no_faktur, setNo_faktur] = React.useState('')
   const [kode_pelanggan, setKode_pelanggan] = React.useState('')
   const [tanggal, setTanggal] = React.useState('')
@@ -52,6 +61,9 @@ export default function Settings() {
   const [tlp, setTlp] = React.useState('');
 
   const [nofak, setNofak] = useState([])
+  const [s_nofak, setS_Nofak] = useState([])
+  const [d_penjualan, setD_penjualan] = useState([])
+
 
   const componentRef = useRef();
 
@@ -73,12 +85,12 @@ export default function Settings() {
     setDropdownPopoverShow(false);
   };
 
-  console.log(cartitem)
+  console.log(total)
 
   const Pelanggan = (e) => {
     closeDropdownPopover()
-    setKode_pelanggan(e.kode_pelanggan)
-    setS_Pelanggan(e.nama)
+    setKode_pelanggan(e.value)
+    setS_Pelanggan(e.label)
     setTlp(e.telp)
     console.log(e)
   }
@@ -87,9 +99,11 @@ export default function Settings() {
     getDataBarang()
     getpelanggan()
     getNofak()
+    // getPenjualan()
   }, [])
 
   const getNofak = () => {
+    let fak = [];
     const options = {
       method: 'GET',
       url: Api.url,
@@ -99,17 +113,71 @@ export default function Settings() {
     axios.request(options).then(function (response) {
       console.log(response.data.data);
       setNofak(response.data.data)
+      response.data.data.forEach(element => (
+        fak.push({
+          value: element.no_faktur, label: element.no_faktur
+        })
+      ))
+      setS_Nofak(fak)
     }).catch(function (error) {
       console.error(error);
     });
   }
+  const getPenjualan = () => {
+    let cart = [];
+    const options = {
+      method: 'GET',
+      url: 'https://afgan.hizraniaga.com/m_api.php',
+      params: { a: 'penjualan', faktur: s_faktur }
+    };
+
+    axios.request(options).then(function (response) {
+      console.log(response.data.data);
+      setTukar('edit')
+      setD_penjualan(response.data.data)
+      // response.data.data.forEach(element=>(
+      //   cart.push({
+      //     kode_barang: element.kode_barang,
+      //     nama_barang: element.nama_barang,
+      //     quantity: element.qty,
+      //     harga: element.harga,
+      //   })
+
+      // ))
+
+      // dispatch({
+      //   type: 'ADD_TO_CART',
+      //   item: response.data.data,
+      // });
+      // setTanggal(JSON.stringify(response.data.data[0].tanggal))
+      // setS_Pelanggan(JSON.stringify(response.data.data[0]?.nama))
+      // setStatus(JSON.stringify(response.data.data[0]?.status))
+      // setLama(JSON.stringify(response.data.data[0].lama))
+      // setOngkir(JSON.stringify(response.data.data[0].ongkir))
+      // setAdmin(JSON.stringify(response.data.data[0].admin))
+      // setJumlah(JSON.stringify(response.data.data[0]?.jumlah))
+      // setTotal(JSON.stringify(response.data.data[0]?.total))
+    }).catch(function (error) {
+      console.error(error);
+    });
+
+  }
+
 
   const getpelanggan = () => {
+    let datax = [];
     const options = { method: 'GET', url: Api.url, params: { a: 'pelanggan' } };
 
     axios.request(options).then(function (response) {
       console.log(response.data);
-      setPelanggan(response.data.data)
+      response.data.data.forEach(element => (
+        datax.push(
+          {
+            value: element.kode_pelanggan, label: element.nama, telp: element.telp
+          }
+        )
+      ))
+      setPelanggan(datax)
     }).catch(function (error) {
       console.error(error);
     });
@@ -149,6 +217,7 @@ export default function Settings() {
       console.error(error);
     });
   }
+
 
   const commentsData = useMemo(() => {
     // console.log(search)
@@ -239,7 +308,7 @@ export default function Settings() {
     const cartItem = {
       "kode_barang": item.kode_barang,
       "nama_barang": item.nama_barang,
-      "quantity": quantity,
+      "quantity": quantity ,
       "merek": item.merek,
       "harga": harga,
     };
@@ -248,9 +317,10 @@ export default function Settings() {
       item: cartItem
     });
 
-
+    setfirst('')
     setHarga(0)
     setQuantity(0)
+    
     // dispatchx(Actions.addToCart(item, quantity));
 
     console.log('cart +', item);
@@ -462,7 +532,38 @@ export default function Settings() {
     return items;
   }
 
+  const handleOnSearch = (string, results) => {
+    // onSearch will have as the first callback parameter
+    // the string searched and for the second the results.
+    console.log(string, results)
+  }
 
+  const handleOnHover = (result) => {
+    // the item hovered
+    console.log(result)
+  }
+
+  const handleOnSelect = (item) => {
+    setS_Faktur(item.value)
+    // the item selected
+    // setKode_pelanggan(item.value)
+    // setS_Pelanggan(item.label)
+    // setTlp(item.telp)
+    console.log(item)
+  }
+
+  const handleOnFocus = () => {
+    console.log('Focused')
+  }
+
+  const formatResult = ({ item }) => {
+    return (
+      <>
+        {/* <span style={{ display: 'block', textAlign: 'left' }}>id: {item.kode_pelanggan}</span> */}
+        <span style={{ display: 'block', textAlign: 'left' }}>name: {item.nama_barang}</span>
+      </>
+    )
+  }
 
   const tambahKeranjang = (item) => {
 
@@ -506,6 +607,18 @@ export default function Settings() {
 
   }
 
+  // const onData = (item) => {
+  //   // setTukar('edit')
+  //   setTanggal(item.tanggal)
+  //   setS_Pelanggan(item.nama)
+  //   setStatus(item.status)
+  //   setLama(item.lama)
+  //   setOngkir(item.ongkir)
+  //   setAdmin(item.admin)
+  //   setJumlah(item.jumlah)
+  //   setTotal(item.total)
+  //   console.log(item)
+  // }
   const postPenjualan = () => {
     var y = [];
     nofak.forEach(element => {
@@ -589,7 +702,7 @@ export default function Settings() {
           setStatus('Cash')
           setLama('-')
           setOngkir('')
-          setAdmin('')
+
           setTotal('')
           setJumlah('')
           getNofak()
@@ -670,8 +783,8 @@ export default function Settings() {
               <div className="flex flex-wrap justify-left text-center mb-24">
 
                 <div className="w-full lg:w-6/12 px-4">
-                  <div className="text-center flex justify-between">
-                    <div className="text-center flex justify-between  flex-wrap items-stretch">
+                  <div className="text-center flex justify-around ">
+                    <div className="text-center flex justify-around  flex-wrap items-stretch">
                       <span className="z-10 h-full leading-snug font-normal absolute text-center text-blueGray-300 absolute bg-transparent rounded text-base items-center justify-center w-8 pl-3 py-3">
                         <i className="fas fa-search"></i>
                       </span>
@@ -686,44 +799,58 @@ export default function Settings() {
 
 
                     </div>
-                    <div className="relative inline-flex align-middle w-full">
-                            <button
-                              className="text-black font-bold text-xs px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 bg-gray-800 active:bg-gray-900 ease-linear transition-all duration-150"
-                              type="button"
-                              ref={btnDropdownRef}
-                              onClick={() => {
-                                dropdownPopoverShow
-                                  ? closeDropdownPopover()
-                                  : openDropdownPopover();
-                              }}
-                            >
-                              {s_faktur}
-                            </button>
-                            <div
-                              ref={popoverDropdownRef}
-                              className={
-                                (dropdownPopoverShow ? "block " : "hidden ") +
-                                "bg-white text-base z-50 float-left py-2 list-none text-left rounded shadow-lg mt-1 min-w-48"
-                              }
-                            >
-                              <a
+                    {/* <div className="w-full lg:w-6/12 px-4">
+                      <div className="relative w-full mb-3">
 
-                                className="text-sm py-2 px-4 font-normal block w-full whitespace-no-wrap bg-transparent text-gray-800"
-                                onClick={() => setS_Faktur('No Faktur')}
-                              >
-                                No Faktur
-                              </a>
-                              {pelanggan?.map((item, i) => (
-                                <a
-                                  key={i}
-                                  className="text-sm cursor-pointer py-2 px-4 font-normal block w-full whitespace-no-wrap bg-transparent text-gray-800"
-                                  onClick={() => Pelanggan(item)}
-                                >
-                                  {item.nama}
-                                </a>
-                              ))}
-                            </div>
-                          </div>
+                        <Select
+                          defaultValue={selectedOption1}
+                          onChange={handleOnSelect}
+                          options={s_nofak}
+
+                        />
+                      </div>
+                    </div> */}
+                    {/* <button
+                      className="text-black font-bold text-xs px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 bg-gray-800 active:bg-gray-900 ease-linear transition-all duration-150"
+                      type="button"
+                      // ref={btnDropdownRef}
+                      onClick={() => getPenjualan()}
+                    >
+                      Cari
+                    </button> */}
+                    {/* <button
+                        className="text-black font-bold text-xs px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 bg-gray-800 active:bg-gray-900 ease-linear transition-all duration-150"
+                        type="button"
+                        ref={btnDropdownRef}
+                        onClick={() => setShowModal(true)}
+                      >
+                        {s_faktur}
+                      </button>
+                      <div
+                        ref={popoverDropdownRef}
+                        className={
+                          (dropdownPopoverShow ? "block " : "hidden ") +
+                          "bg-white text-base z-50 float-left py-2 list-none text-left rounded shadow-lg mt-1 min-w-48"
+                        }
+                      >
+                        <a
+
+                          className="text-sm py-2 px-4 font-normal block w-full whitespace-no-wrap bg-transparent text-gray-800"
+                          onClick={() => setS_Faktur('No Faktur')}
+                        >
+                          No Faktur
+                        </a>
+                        {nofak?.map((item, i) => (
+                          <a
+                            key={i}
+                            className="text-sm cursor-pointer py-2 px-4 font-normal block w-full whitespace-no-wrap bg-transparent text-gray-800"
+                            onClick={() => Pelanggan(item)}
+                          >
+                            {item.no_faktur}
+                          </a>
+                        ))}
+                      </div> */}
+
                     {/* <button onClick={() => history.push('/admin/penjualan/print-faktur')}
                       className="bg-lightBlue-500 text-white active:bg-lightBlue-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150"
                       type="button"
@@ -841,7 +968,7 @@ export default function Settings() {
                               className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
                               htmlFor="grid-password"
                             >
-                              Tanggal
+                              Tanggal {d_penjualan[0]?.tanggal}
                             </label>
                             <input
                               value={tanggal}
@@ -853,62 +980,21 @@ export default function Settings() {
                           </div>
                         </div>
 
+
                         <div className="w-full lg:w-6/12 px-4">
-                          <label
-                            className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                            htmlFor="grid-password"
-                          >
-                            Pelanggan
-                          </label>
-                          <div className="relative inline-flex align-middle w-full">
-                            <button
-                              className="text-black font-bold text-xs px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 bg-gray-800 active:bg-gray-900 ease-linear transition-all duration-150"
-                              type="button"
-                              ref={btnDropdownRef}
-                              onClick={() => {
-                                dropdownPopoverShow
-                                  ? closeDropdownPopover()
-                                  : openDropdownPopover();
-                              }}
-                            >
-                              {s_Pelanggan}
-                            </button>
-                            <div
-                              ref={popoverDropdownRef}
-                              className={
-                                (dropdownPopoverShow ? "block " : "hidden ") +
-                                "bg-white text-base z-50 float-left py-2 list-none text-left rounded shadow-lg mt-1 min-w-48"
-                              }
-                            >
-                              <a
-
-                                className="text-sm py-2 px-4 font-normal block w-full whitespace-no-wrap bg-transparent text-gray-800"
-                                onClick={() => setS_Pelanggan('Pilih Pelanggan')}
-                              >
-                                Pilih Pelanggan
-                              </a>
-                              {pelanggan?.map((item, i) => (
-                                <a
-                                  key={i}
-                                  className="text-sm cursor-pointer py-2 px-4 font-normal block w-full whitespace-no-wrap bg-transparent text-gray-800"
-                                  onClick={() => Pelanggan(item)}
-                                >
-                                  {item.nama}
-                                </a>
-                              ))}
-                            </div>
-                          </div>
-
-                        </div>
-                        {/* <div className="w-full lg:w-6/12 px-4">
                           <div className="relative w-full mb-3">
                             <label
                               className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
                               htmlFor="grid-password"
                             >
-                              Nama Pelanggan
+                              Nama Pelanggan {d_penjualan[0]?.nama}
                             </label>
-                            <select
+                            <Select
+                              defaultValue={selectedOption}
+                              onChange={Pelanggan}
+                              options={pelanggan}
+                            />
+                            {/* <select
                               value={kode_pelanggan}
                               onChange={(e) => { setKode_pelanggan(e.target.value); console.log('plngg', kode_pelanggan); }}
                               className="selectpicker1">
@@ -917,16 +1003,16 @@ export default function Settings() {
                                 <option key={i} value={item.kode_pelanggan}>{item.nama}</option>
                               ))}
 
-                            </select>
+                            </select> */}
                           </div>
-                        </div> */}
+                        </div>
                         <div className="w-full lg:w-6/12 px-4">
                           <div className="relative w-full mb-3">
                             <label
                               className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
                               htmlFor="grid-password"
                             >
-                              Status
+                              Status {d_penjualan[0]?.status} {d_penjualan[0]?.lama}
                             </label>
                             <select
                               value={status}
@@ -952,7 +1038,7 @@ export default function Settings() {
                               className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
                               htmlFor="grid-password"
                             >
-                              Biaya Pengiriman
+                              Biaya Pengiriman {d_penjualan[0]?.ongkir}
                             </label>
                             <input
                               value={ongkir}
@@ -969,7 +1055,7 @@ export default function Settings() {
                               className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
                               htmlFor="grid-password"
                             >
-                              admin
+                              admin {d_penjualan[0]?.admin}
                             </label>
                             <input
                               disabled={true}
@@ -987,7 +1073,7 @@ export default function Settings() {
                               className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
                               htmlFor="grid-password"
                             >
-                              Jumlah Item
+                              Jumlah Item {d_penjualan[0]?.jumlah}
                             </label>
                             <input
                               disabled={true}
@@ -1006,7 +1092,7 @@ export default function Settings() {
                               className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
                               htmlFor="grid-password"
                             >
-                              Total Bayar
+                              Total Bayar {d_penjualan[0]?.total}
                             </label>
                             <input
                               value={total}
@@ -1018,13 +1104,21 @@ export default function Settings() {
                           </div>
                         </div>
                         <div className="w-full lg:w-6/12 px-4">
-
-                          <button onClick={() => postPenjualan()}
-                            className="bg-lightBlue-500 text-white active:bg-lightBlue-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150"
-                            type="button"
-                          >
-                            Simpan
-                          </button>
+                          {tukar === 'simpan' ?
+                            <button onClick={() => postPenjualan()}
+                              className="bg-lightBlue-500 text-white active:bg-lightBlue-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150"
+                              type="button"
+                            >
+                              Simpan
+                            </button>
+                            :
+                            <button
+                              className="bg-lightBlue-500 text-white active:bg-lightBlue-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150"
+                              type="button"
+                            >
+                              Edit
+                            </button>
+                          }
                           {/* <button onClick={() => handlePrint()}
                             className="bg-lightBlue-500 text-white active:bg-lightBlue-600 font-bold uppercase text-xs px-4 py-2 rounded shadow hover:shadow-md outline-none focus:outline-none mr-1 ease-linear transition-all duration-150"
                             type="button"
@@ -1037,6 +1131,7 @@ export default function Settings() {
 
 
                     </form>
+
                     <div ref={componentRef}
                       className={
                         "relative  bg-blueGray-100 flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded " +
@@ -1053,7 +1148,10 @@ export default function Settings() {
                                   "light"
                                 }
                               >
-                                UD.AFGAN ROOF
+                                {admin == 'admin1' && 'UD.AFGANROOF 1'}
+                                {admin == 'admin2' && 'UD.AFGANROOF 2'}
+                                {admin == 'owner' && 'UD.AFGANROOF'}
+
                               </h3>
                             </div>
                           </div>
@@ -1432,6 +1530,7 @@ export default function Settings() {
                       {/* <button onClick={handlePrint}>print</button> */}
 
                     </div>
+
                     {/* </div>
                     </div> */}
                     {/* <div className="w-full lg:w-6/12 xl:w-3/12 px-4">
@@ -1487,11 +1586,132 @@ export default function Settings() {
               </div>
 
             </div>
+
           </section>
         </div>
 
-        <div className="w-full lg:w-4/12 px-4">
+        <div className="w-full lg:w-4/12 px-4 ">
+          {showModal ? (
+            <>
+              <div
+                className="justify-center items-center flex w-screen overflow-y-auto h-32 fixed inset-0 z-50 outline-none focus:outline-none"
+                onClick={() => setShowModal(false)}
+              >
+                <div className="relative w-auto my-6 mx-auto max-w-sm">
+                  {/*content*/}
+                  <div className="border-0 rounded-lg shadow-lg relative flex flex-col w-full bg-white outline-none focus:outline-none">
+                    {/*header*/}
+                    <div className="flex items-start justify-between p-5 border-b border-solid border-blueGray-200 rounded-t">
+                      <h3 className="text-3xl font-semibold">
+                        Modal Title
+                      </h3>
+                      <button
+                        className="p-1 ml-auto bg-transparent border-0 text-black opacity-5 float-right text-3xl leading-none font-semibold outline-none focus:outline-none"
+                        onClick={() => setShowModal(false)}
+                      >
+                        <span className="bg-transparent text-black opacity-5 h-6 w-6 text-2xl block outline-none focus:outline-none">
+                          ×
+                        </span>
+                      </button>
+                    </div>
+                    <div class="flex-1 flex flex-col bg-white">
 
+                      <div class="flex flex-col bg-red-500 h-full">
+
+                        <div class="bg-white h-full flex-grow-0 overflow-y-auto">
+                          <table className="items-center w-full mt-16  border-collapse">
+                            <thead>
+                              <tr>
+                                <th
+                                  className={
+                                    "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                    "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                                  }
+                                >
+                                  Nama Barang
+                                </th>
+                                <th
+                                  className={
+                                    "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                    "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                                  }
+                                >
+                                  Qty
+                                </th>
+                                <th
+                                  className={
+                                    "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                    "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                                  }
+                                >
+                                  Harga Satuan
+                                </th>
+                                <th
+                                  className={
+                                    "px-6 align-middle border border-solid py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left " +
+
+                                    "bg-blueGray-50 text-blueGray-500 border-blueGray-100"
+
+                                  }
+                                >
+                                  SubTotal
+                                </th>
+
+
+                              </tr>
+                            </thead>
+                            <tbody>
+
+                            </tbody>
+                          </table>
+                        </div>
+
+
+
+                      </div>
+
+                    </div>
+                    {/*body*/}
+
+                    {/* {pelanggan?.map((item, i) => (
+                          <a
+                            key={i}
+                            className="text-sm cursor-pointer py-2 px-4 font-normal block w-full whitespace-no-wrap bg-transparent text-gray-800"
+                            onClick={() => Pelanggan(item)}
+                          >
+                            {item.nama}
+                          </a>
+                        ))} */}
+
+                    {/*footer*/}
+                    <div className="flex items-center justify-end p-6 border-t border-solid border-blueGray-200 rounded-b">
+                      <button
+                        className="text-red-500 background-transparent font-bold uppercase px-6 py-2 text-sm outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                        type="button"
+                        onClick={() => setShowModal(false)}
+                      >
+                        Close
+                      </button>
+                      <button
+                        className="bg-emerald-500 text-white active:bg-emerald-600 font-bold uppercase text-sm px-6 py-3 rounded shadow hover:shadow-lg outline-none focus:outline-none mr-1 mb-1 ease-linear transition-all duration-150"
+                        type="button"
+                        onClick={() => setShowModal(false)}
+                      >
+                        Save Changes
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="opacity-25 fixed inset-0 z-40 bg-black"></div>
+            </>
+          ) : null}
           <section className="relative py-16 bg-white-200">
             <div className="container mx-auto px-4">
               <div className="flex flex-wrap  mb-24">
@@ -1510,6 +1730,7 @@ export default function Settings() {
 
               </div>
             </div>
+
           </section>
         </div>
 
