@@ -2,8 +2,8 @@
   "name": "notus-react",
   "version": "1.1.0",
   "description": "Notus React - A free Tailwind CSS and React UI Kit and Admin by Creative Tim.",
-  "repository": "https://github.com/creativetimofficial/notus-react",
-  "homepage": "https://afgan.hizraniaga.com",
+  "repository": "https://github.com/kaduk7/hizratech",
+  "homepage": "https://hizratech.com",
   "license": "MIT",
   "dependencies": {
     "@fortawesome/fontawesome-free": "5.15.3",

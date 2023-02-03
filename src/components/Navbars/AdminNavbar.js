@@ -16,7 +16,7 @@ export default function Navbar() {
               // href="#pablo"
               // onClick={(e) => e.preventDefault()}
             >
-              Halaman Transaksi
+              Hizratech
             </a>
           </Link>
 

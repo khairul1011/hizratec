@@ -23,6 +23,8 @@ import LaporanHari from "views/admin/laporanhari";
 import LaporanBulan from "views/admin/LaporanBulan";
 import Pembelian from "views/admin/Pembelian";
 import PrintHari from "views/admin/PrintHari";
+import Index from "views/Index";
+import Profile from "views/Profile";
 
 export default function Admin() {
   return (
@@ -46,7 +48,9 @@ export default function Admin() {
             <Route path="/admin/tables" exact component={Tables} />
             <Route path="/admin/laporanharian" exact component={LaporanHari} />
             <Route path="/admin/laporanbulanan" exact component={LaporanBulan} />
-            <Redirect from="/admin" to="/admin/dashboard" />
+            <Route path="/Index" exact component={Index} />
+            {/* <Route path="/Profile" exact component={Profile} /> */}
+            {/* <Redirect from="/Index" to="/Index" /> */}
           </Switch>
           <FooterAdmin />
         </div>

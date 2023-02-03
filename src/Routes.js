@@ -13,6 +13,8 @@ import Landing from "views/Landing.js";
 import Profile from "views/Profile.js";
 import Index from "views/Index.js";
 import adduser from "views/admin/adduser";
+import Artikel from 'views/Artikel';
+import Kontak from 'views/Kontak';
 
 const Routes = () => {
     const user = useSelector(state => state.userReducer.isLogin);
@@ -23,19 +25,27 @@ const Routes = () => {
                 {/* add routes with layouts */}
                 {user == true ?
                     <>
-                       <Route path="/admin" component={Admin} />
-                         {/* <Route path="/admin/penjualan" component={Admin} /> */}
-                        {/* <Route path="/admin/penjualan" exact component={Admin} /> */}
+                    {/* <Route path="/auth/login" component={Auth} /> */}
+                    <Route path="/auth/login" exact component={Auth} />
                         {/* add redirect for first page */}
-                        <Redirect from="*" to="/admin/penjualan" />
+                        <Redirect from="*" to="/auth/login" />
+                       
+                      
                     </>
 
                     :
                     <>
-                        {/* <Route path="/auth/login" component={Auth} /> */}
-                        <Route path="/auth/login" exact component={Auth} />
+                         <Route path="/admin" component={Admin} />
+                        <Route path="/Index" component={Index} />
+                        <Route path="/Profile" component={Profile} />
+                        <Route path="/Artikel" component={Artikel} />
+                        <Route path="/Kontak" component={Kontak} />
+                        <Route path="/Landing" component={Landing} />
+                        {/* <Route path="/admin/penjualan" component={Admin} /> */}
+                        {/* <Route path="/admin/penjualan" exact component={Admin} /> */}
                         {/* add redirect for first page */}
-                        <Redirect from="*" to="/auth/login" />
+                        <Redirect from="*" to="/Index" />
+                        
                     </>
 
                 }

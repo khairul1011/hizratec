@@ -19,9 +19,10 @@ export default function Addbarang() {
   const [nama_barang, setNama_barang] = React.useState('')
   const [jenis, setJenis] = React.useState('')
   const [merek, setMerek] = React.useState('')
-  const [kategori, setKategori] = React.useState('Baja Ringan')
-  const [unit, setUnit] = React.useState('Lembar')
-  const [harga, setHarga] = React.useState('')
+  const [kategori, setKategori] = React.useState('Leptop')
+  const [unit, setUnit] = React.useState('Pcs')
+  const [hargajual, setHargajual] = React.useState([])
+  const [hargamodal, setHargamodal] = React.useState([])
   const [stok, setStok] = React.useState('')
 
   const [tukar, setTukar] = useState('simpan')
@@ -82,17 +83,17 @@ export default function Addbarang() {
   const postBarang = () => {
     const options = {
       method: 'POST',
-      url: 'https://afgan.hizraniaga.com/m_api.php/m_api.php',
-      params: { a: 'addproduct' },
+      url: 'http://localhost/api/api.php',
+      params: { a: 'addbarang' },
       headers: { 'Content-Type': 'application/json' },
       data: {
         kode_barang: kode_barang,
         nama_barang: nama_barang,
-        jenis: jenis,
         merek: merek,
         kategori: kategori,
         unit: unit,
-        harga: harga,
+        harga_modal: hargamodal,
+        harga_jual: hargajual,
         stok: stok
       }
     };
@@ -104,12 +105,13 @@ export default function Addbarang() {
         getDataBarang()
         setKode_barang('')
         setNama_barang('')
-        setKategori('')
-        setUnit('')
+        setKategori('Leptop')
+        setUnit('Pcs')
         setMerek('')
         setJenis('')
-        setHarga('')
-        setStok('')
+        setHargamodal([])
+        setHargajual([])
+        setStok([])
       }
     }).catch(function (error) {
       console.error(error);
@@ -129,7 +131,8 @@ export default function Addbarang() {
         merek: merek,
         kategori: kategori,
         unit: unit,
-        harga: harga,
+        harga_modal: hargamodal,
+        harga_jual: hargajual,
         stok: stok
       }
     };
@@ -141,12 +144,13 @@ export default function Addbarang() {
         getDataBarang()
         setKode_barang('')
         setNama_barang('')
-        setKategori('')
-        setUnit('')
+        setKategori('Leptop')
+        setUnit('Pcs')
         setMerek('')
         setJenis('')
-        setHarga('')
-        setStok('')
+        setHargamodal([])
+        setHargajual([])
+        setStok([])
       }
     }).catch(function (error) {
       console.error(error);
@@ -154,14 +158,15 @@ export default function Addbarang() {
   }
 
   const onData = (item) => {
-    setTukar('edit')
+    setTukar('Edit')
     setKode_barang(item.kode_barang)
     setNama_barang(item.nama_barang)
     setKategori(item.kategori)
     setUnit(item.unit)
     setMerek(item.merek)
     setJenis(item.jenis)
-    setHarga(item.harga)
+    setHargamodal(item.harga_modal)
+    setHargajual(item.harga_jual)
     setStok(item.stok)
     console.log(item)
   }
@@ -171,7 +176,7 @@ export default function Addbarang() {
       <div className="relative flex flex-col min-w-0 break-words w-full mb-6 shadow-lg rounded-lg bg-blueGray-100 border-0">
         <div className="rounded-t bg-white mb-0 px-6 py-6">
           <div className="text-center flex justify-between">
-            <h6 className="text-blueGray-700 text-xl font-bold">Data Barang</h6>
+            <h1 className="text-blueGray-700 text-xl font-bold">DATA BARANG</h1>
 
 
           </div>
@@ -217,23 +222,7 @@ export default function Addbarang() {
                   />
                 </div>
               </div>
-              <div className="w-full lg:w-6/12 px-4">
-                <div className="relative w-full mb-3">
-                  <label
-                    className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
-                    htmlFor="grid-password"
-                  >
-                    Jenis
-                  </label>
-                  <input
-                    value={jenis}
-                    onChange={(e) => { setJenis(e.target.value); console.log(jenis) }}
-                    type="text"
-                    className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
-                    defaultValue=""
-                  />
-                </div>
-              </div>
+              
               <div className="w-full lg:w-6/12 px-4">
                 <div className="relative w-full mb-3">
                   <label
@@ -263,12 +252,12 @@ export default function Addbarang() {
                     value={kategori}
                     onChange={(e) => { setKategori(e.target.value); console.log(kategori) }}
                     className="selectpicker1">
-                    <option valu="Baja Ringan">Baja Ringan</option>
-                    <option valu="Rangka">Rangka</option>
-                    <option valu="Plafon PVC">Plafon PVC</option>
-                    <option valu="List">List</option>
+                    <option valu="Leptop">Leptop</option>
+                    <option valu="Hardisk">Hardisk</option>
+                    <option valu="Memory">Memory</option>
+                    <option valu="Printer">Printer</option>
                     <option valu="Accesoris">Accesoris</option>
-                    <option valu="Plafon">Plafon</option>
+                    
                   </select>
                 </div>
               </div>
@@ -284,12 +273,8 @@ export default function Addbarang() {
                     value={unit}
                     onChange={(e) => { setUnit(e.target.value); console.log(unit) }}
                     className="selectpicker2">
-                    <option valeu="Lembar">Lembar</option>
-                    <option valeu="Batang">Batang</option>
-                    <option valeu="M2">M2</option>
-                    <option valeu="Kotak">Kotak</option>
-                    <option valeu="Buah">Buah</option>
-                    <option valeu="Unit">Unit</option>
+                    <option value="Pcs">Pcs</option>
+                    <option value="Kg">Kg</option>
                   </select>
                 </div>
               </div>
@@ -299,12 +284,29 @@ export default function Addbarang() {
                     className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
                     htmlFor="grid-password"
                   >
-                    Harga
+                    Harga Modal
                   </label>
                   <input
-                    value={harga}
-                    onChange={(e) => { setHarga(e.target.value); console.log(harga) }}
-                    type="text"
+                    value={hargamodal}
+                    onChange={(e) => { setHargamodal(e.target.value); console.log(hargamodal) }}
+                    type="number"
+                    className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
+                    defaultValue=""
+                  />
+                </div>
+              </div>
+              <div className="w-full lg:w-6/12 px-4">
+                <div className="relative w-full mb-3">
+                  <label
+                    className="block uppercase text-blueGray-600 text-xs font-bold mb-2"
+                    htmlFor="grid-password"
+                  >
+                    Harga Jual
+                  </label>
+                  <input
+                    value={hargajual}
+                    onChange={(e) => { setHargajual(e.target.value); console.log(hargajual) }}
+                    type="number"
                     className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                     defaultValue=""
                   />
@@ -321,7 +323,7 @@ export default function Addbarang() {
                   <input
                     value={stok}
                     onChange={(e) => { setStok(e.target.value); console.log(stok) }}
-                    type="text"
+                    type="number"
                     className="border-0 px-3 py-3 placeholder-blueGray-300 text-blueGray-600 bg-white rounded text-sm shadow focus:outline-none focus:ring w-full ease-linear transition-all duration-150"
                     defaultValue=""
                   />
@@ -345,7 +347,11 @@ export default function Addbarang() {
                 }
               </div>
             </div>
-
+            <div className="w-full lg:w-6/12 px-4">
+              <div className="relative w-full mb-3">
+                
+              </div>
+            </div>
             <div className="rounded-t bg-white mb-0 px-6 py-6">
               <div className="text-center flex justify-between">
                 <h6 className="text-blueGray-700 text-xl font-bold">List Barang</h6>
@@ -390,7 +396,7 @@ export default function Addbarang() {
                       Harga
                     </th>
                     <th className="px-6 bg-blueGray-50 text-blueGray-500 align-middle border border-solid border-blueGray-100 py-3 text-xs uppercase border-l-0 border-r-0 whitespace-nowrap font-semibold text-left">
-                      Jumlah
+                      Stok
                     </th>
                   </tr>
                 </thead>
@@ -412,7 +418,7 @@ export default function Addbarang() {
                       </td>
                       <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
                         {/* <i className="fas fa-arrow-up text-emerald-500 mr-4"></i> */}
-                        {item.harga}
+                        {item.harga_jual}
                       </td>
                       <td className="border-t-0 px-6 align-middle border-l-0 border-r-0 text-xs whitespace-nowrap p-4">
                         {/* <i className="fas fa-arrow-up text-emerald-500 mr-4"></i> */}

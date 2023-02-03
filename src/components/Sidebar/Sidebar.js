@@ -24,9 +24,9 @@ export default function Sidebar() {
           {/* Brand */}
           <Link
             className="md:block text-left md:pb-2 text-blueGray-600 mr-0 inline-block whitespace-nowrap text-sm uppercase font-bold p-4 px-0"
-            to="/admin/penjualan"
+            to="/admin/dashboard"
           >
-            Afgan Roof
+            Hizratech
           </Link>
           {/* User */}
           <ul className="md:hidden items-center flex flex-wrap list-none">
@@ -174,8 +174,8 @@ export default function Sidebar() {
                 </Link>
               </li>
 
-              <li className="items-center">
-                <Link
+              {/* <li className="items-center"> */}
+                {/* <Link
                   className={
                     "text-xs uppercase py-3 font-bold block " +
                     (window.location.href.indexOf("/admin/pembelian") !== -1
@@ -194,7 +194,7 @@ export default function Sidebar() {
                   ></i>{" "}
                   Pembelian
                 </Link>
-              </li>
+              </li> */}
 
               <li className="items-center">
                 <Link
@@ -214,7 +214,7 @@ export default function Sidebar() {
                         : "text-blueGray-300")
                     }
                   ></i>{" "}
-                  Penjualan
+                  Data Barang
                 </Link>
               </li>
             </ul>

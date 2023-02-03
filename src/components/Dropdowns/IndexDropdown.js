@@ -27,7 +27,7 @@ const IndexDropdown = () => {
           dropdownPopoverShow ? closeDropdownPopover() : openDropdownPopover();
         }}
       >
-        Demo Pages
+        Tentang Kami 
       </a>
       <div
         ref={popoverDropdownRef}
@@ -36,32 +36,32 @@ const IndexDropdown = () => {
           "bg-white text-base z-50 float-left py-2 list-none text-left rounded shadow-lg min-w-48"
         }
       >
-        <span
+        {/* <span
           className={
             "text-sm pt-2 pb-0 px-4 font-bold block w-full whitespace-nowrap bg-transparent text-blueGray-400"
           }
         >
           Admin Layout
-        </span>
+        </span> */}
         <Link
-          to="/admin/dashboard"
+          to="/Profile"
           className="text-sm py-2 px-4 font-normal block w-full whitespace-nowrap bg-transparent text-blueGray-700"
         >
-          Dashboard
+          Tentang Kami 
         </Link>
         <Link
           to="/admin/settings"
           className="text-sm py-2 px-4 font-normal block w-full whitespace-nowrap bg-transparent text-blueGray-700"
         >
-          Settings
+          Aturan Order
         </Link>
         <Link
           to="/admin/tables"
           className="text-sm py-2 px-4 font-normal block w-full whitespace-nowrap bg-transparent text-blueGray-700"
         >
-          Tables
+          Karir
         </Link>
-        <Link
+        {/* <Link
           to="/admin/maps"
           className="text-sm py-2 px-4 font-normal block w-full whitespace-nowrap bg-transparent text-blueGray-700"
         >
@@ -106,7 +106,7 @@ const IndexDropdown = () => {
           className="text-sm py-2 px-4 font-normal block w-full whitespace-nowrap bg-transparent text-blueGray-700"
         >
           Profile
-        </Link>
+        </Link> */}
       </div>
     </>
   );
